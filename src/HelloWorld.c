@@ -1,7 +1,7 @@
 /*
  ============================================================================
  Name        : HelloWorld.c
- Author      : Kai Chi
+ Author      : Kai Chi & Sleyter Angulo
  Version     :
  Copyright   : Your copyright notice
  Description : Hello World in C, Ansi-style
@@ -16,6 +16,11 @@
 
 int file_gyro;
 int file_rgb;
+int *previous_x;
+int *previous_y;
+int *previous_z;
+int *angular_displacement;
+
 
 int main() {
 
@@ -124,19 +129,21 @@ void print_rgb_values() {
 void print_gyro_values() {
 	char reg[1] = { 0x28 };
 	write(file_gyro, reg, 1);
-
 	char datai[1] = { 0 };
+	
 	if (read(file_gyro, datai, 1) != 1) {
 		printf("Error : Input/Output Error \n");
 		exit(1);
 	}
 	char data_0 = datai[0];
+	
 
 	//xGyro msb
 	reg[0] = 0x29;
 	write(file_gyro, reg, 1);
 	read(file_gyro, datai, 1);
 	char data_1 = datai[0];
+	
 
 	//yGyro lsb
 	reg[0] = 0x2A;
@@ -163,6 +170,7 @@ void print_gyro_values() {
 	read(file_gyro, datai, 1);
 	char data_5 = datai[0];
 
+	//Convert data
 	int xGyro = (data_1 << 8) + data_0;
 	if (xGyro > 32767) {
 		xGyro -= 65536;
@@ -181,4 +189,15 @@ void print_gyro_values() {
 	printf("Rotation : %d, ", xGyro);
 	printf("%d, ", yGyro);
 	printf("%d\n", zGyro);
+	
+	// Save the data
+	
 }
+
+double calculate_angular (double current, double previous){
+	int sensor_velocity = 100;
+	double prev_angular = (current - previous) * sensor_velocity;
+	*angular_displacement += prev_angular;
+	return prev_angular;
+	
+	}
