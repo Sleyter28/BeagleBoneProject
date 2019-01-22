@@ -16,10 +16,15 @@
 
 int file_gyro;
 int file_rgb;
-int *previous_x;
-int *previous_y;
-int *previous_z;
-int *angular_displacement;
+int previous_x;
+int previous_y;
+int previous_z;
+int angular_disp_x;
+int angular_disp_y;
+int angular_disp_z;
+int xGyro = 0;
+int yGyro = 0;
+int zGyro = 0;
 
 
 int main() {
@@ -105,10 +110,10 @@ void print_rgb_values() {
 		printf("Erorr : Input/output Erorr \n");
 	} else {
 		// Convert the data
-		int cData = (data[1] * 256 + data[0]);
-		int red = (data[3] * 256 + data[2]);
-		int green = (data[5] * 256 + data[4]);
-		int blue = (data[7] * 256 + data[6]);
+		int cData = (data[1] << 8) + data[0];
+		int red = (data[3] << 8) + data[2];
+		int green = (data[5] << 8) + data[4];
+		int blue = (data[7] << 8) + data[6];
 
 		// Calculate luminance
 		float luminance = (-0.32466) * (red) + (1.57837) * (green)
@@ -137,6 +142,11 @@ void print_gyro_values() {
 	}
 	char data_0 = datai[0];
 	
+	//Assigning previous values
+	previous_x = xGyro;
+	previous_y = yGyro;
+	previous_z= zGyro;
+
 
 	//xGyro msb
 	reg[0] = 0x29;
@@ -171,17 +181,17 @@ void print_gyro_values() {
 	char data_5 = datai[0];
 
 	//Convert data
-	int xGyro = (data_1 << 8) + data_0;
+	xGyro = (data_1 << 8) + data_0;
 	if (xGyro > 32767) {
 		xGyro -= 65536;
 	}
 
-	int yGyro = (data_3 << 8) + data_2;
+	yGyro = (data_3 << 8) + data_2;
 	if (yGyro > 32767) {
 		yGyro -= 65536;
 	}
 
-	int zGyro = (data_5 << 8) + data_4;
+	zGyro = (data_5 << 8) + data_4;
 	if (zGyro > 32767) {
 		zGyro -= 65536;
 	}
@@ -190,14 +200,21 @@ void print_gyro_values() {
 	printf("%d, ", yGyro);
 	printf("%d\n", zGyro);
 	
-	// Save the data
+	//Call to calculate angular displacement
+	angular_disp_x += calculate_angular(xGyro, previous_x);
+	angular_disp_y += calculate_angular(yGyro, previous_y);
+	angular_disp_z += calculate_angular(zGyro, previous_z);
+
+	//Print angular displacement
+	printf("Angular Displacement: x:%d", angular_disp_x);
+	printf("y: %d, ", angular_disp_y);
+	printf("z: %d \n", angular_disp_z);
 	
 }
 
-double calculate_angular (double current, double previous){
+int calculate_angular (int current, int previous){
 	int sensor_velocity = 100;
-	double prev_angular = (current - previous) * sensor_velocity;
-	*angular_displacement += prev_angular;
+	int prev_angular = (current - previous) * sensor_velocity;
 	return prev_angular;
 	
 	}
